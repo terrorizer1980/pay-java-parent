@@ -1,16 +1,15 @@
 package com.egzosn.pay.union.api;
 
-import com.egzosn.pay.common.api.BasePayConfigStorage;
-import com.egzosn.pay.common.bean.CertStoreType;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import com.egzosn.pay.common.api.BasePayConfigStorage;
+import com.egzosn.pay.common.bean.CertStoreType;
 
 
 /**
  * @author Actinia
- *         <p>
- *         <pre>
+ * <pre>
  *         email hayesfu@qq.com
  *           create 2017 2017/11/4 0004
  *         </pre>
@@ -64,17 +63,18 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
      * 设置私钥证书
      *
      * @param certificate 私钥证书地址 或者证书内容字符串
-     *                        私钥证书密码 {@link #setKeyPrivateCertPwd(String)}
+     *                    私钥证书密码 {@link #setKeyPrivateCertPwd(String)}
      */
     public void setKeyPrivateCert(String certificate) {
         super.setKeyPrivate(certificate);
         this.keyPrivateCert = certificate;
     }
+
     /**
      * 设置私钥证书
      *
      * @param keyPrivateCert 私钥证书信息流
-     * 私钥证书密码 {@link #setKeyPrivateCertPwd(String)}
+     *                       私钥证书密码 {@link #setKeyPrivateCertPwd(String)}
      */
     public void setKeyPrivateCert(InputStream keyPrivateCert) {
         this.keyPrivateCert = keyPrivateCert;
@@ -92,6 +92,7 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
     public void setAcpMiddleCert(String acpMiddleCert) {
         this.acpMiddleCert = acpMiddleCert;
     }
+
     /**
      * 设置中级证书
      *
@@ -109,6 +110,7 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
     public void setAcpRootCert(String acpRootCert) {
         this.acpRootCert = acpRootCert;
     }
+
     /**
      * 设置根证书
      *
@@ -125,6 +127,7 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
     public String getAcpRootCert() {
         return (String) acpRootCert;
     }
+
     public InputStream getAcpMiddleCertInputStream() throws IOException {
         return certStoreType.getInputStream(acpMiddleCert);
     }
@@ -135,6 +138,7 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
 
     /**
      * 获取私钥证书密码
+     *
      * @return 私钥证书密码
      */
     public String getKeyPrivateCertPwd() {
@@ -144,8 +148,20 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
     public void setKeyPrivateCertPwd(String keyPrivateCertPwd) {
         this.keyPrivateCertPwd = keyPrivateCertPwd;
     }
+
     @Override
     public String getAppid() {
+        return null;
+    }
+
+    /**
+     * 应用id
+     * 纠正名称
+     *
+     * @return 应用id
+     */
+    @Override
+    public String getAppId() {
         return null;
     }
 
@@ -214,6 +230,7 @@ public class UnionPayConfigStorage extends BasePayConfigStorage {
 
     /**
      * 证书存储类型
+     *
      * @return 证书存储类型
      */
     public CertStoreType getCertStoreType() {

@@ -21,9 +21,7 @@ import com.egzosn.pay.common.bean.PayMessage;
 import com.egzosn.pay.common.bean.PayOrder;
 import com.egzosn.pay.common.bean.PayOutMessage;
 import com.egzosn.pay.common.bean.RefundOrder;
-import com.egzosn.pay.common.bean.TransactionType;
 import com.egzosn.pay.common.bean.TransferOrder;
-import com.egzosn.pay.common.exception.PayErrorException;
 import com.egzosn.pay.common.http.HttpConfigStorage;
 import com.egzosn.pay.common.http.HttpRequestTemplate;
 import com.egzosn.pay.common.util.MatrixToImageWriter;
@@ -33,7 +31,7 @@ import com.egzosn.pay.common.util.str.StringUtils;
 /**
  * 支付基础服务
  *
- * @author: egan
+ * @author egan
  * <pre>
  *      email egzosn@gmail.com
  *      date 2017/3/5 20:36
@@ -112,7 +110,8 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
         String base64ClientID = null;
         try {
             base64ClientID = com.egzosn.pay.common.util.sign.encrypt.Base64.encode(String.format("%s:%s", user, password).getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException e) {
             LOG.error(e);
         }
 
@@ -151,13 +150,15 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
      */
     @Override
     public <O extends PayOrder> String toPay(O order) {
-        Map orderInfo = orderInfo(order);
+        Map<String, Object> orderInfo = orderInfo(order);
         return buildRequest(orderInfo, MethodType.POST);
     }
+
     /**
      * app支付
+     *
      * @param order 订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 对应app所需参数信息
      */
     @Override
@@ -173,7 +174,7 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
      */
     @Override
     public <O extends PayOrder> BufferedImage genQrPay(O order) {
-       return MatrixToImageWriter.writeInfoToJpgBuff(getQrPay(order));
+        return MatrixToImageWriter.writeInfoToJpgBuff(getQrPay(order));
     }
 
     /**
@@ -199,7 +200,8 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
                     if (valueStr.equals(new String(valueStr.getBytes("iso8859-1"), "iso8859-1"))) {
                         valueStr = new String(valueStr.getBytes("iso8859-1"), payConfigStorage.getInputCharset());
                     }
-                } catch (UnsupportedEncodingException e) {
+                }
+                catch (UnsupportedEncodingException e) {
                     LOG.error(e);
                 }
             }
@@ -265,7 +267,6 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
     }
 
 
-
     /**
      * 申请退款接口
      *
@@ -279,7 +280,6 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
 
         return callback.perform(refund(refundOrder).getAttrs());
     }
-
 
 
     /**
@@ -307,19 +307,6 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
     @Override
     public <T> T downloadbill(Date billDate, String billType, Callback<T> callback) {
         return callback.perform(downloadbill(billDate, billType));
-    }
-
-    /**
-     * @param tradeNoOrBillDate  支付平台订单号或者账单类型， 具体请 类型为{@link String }或者 {@link Date }，类型须强制限制，类型不对应则抛出异常{@link PayErrorException}
-     * @param outTradeNoBillType 商户单号或者 账单类型
-     * @param transactionType    交易类型
-     * @param callback           处理器
-     * @param <T>                返回类型
-     * @return 返回支付方对应接口的结果
-     */
-    @Override
-    public <T> T secondaryInterface(Object tradeNoOrBillDate, String outTradeNoBillType, TransactionType transactionType, Callback<T> callback) {
-        return callback.perform(secondaryInterface(tradeNoOrBillDate, outTradeNoBillType, transactionType));
     }
 
     /**
@@ -437,6 +424,30 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
     }
 
     /**
+     * 使用转换过的参数进行回调处理
+     *
+     * @param data 转化后的参数Map
+     * @return 获得回调响应信息
+     */
+    @Override
+    public PayOutMessage payBack(Map<String, Object> data) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("回调响应:" + JSON.toJSONString(data));
+        }
+        if (!verify(data)) {
+            return getPayOutMessage("fail", "失败");
+        }
+        PayMessage payMessage = this.createMessage(data);
+        Map<String, Object> context = new HashMap<String, Object>();
+        for (PayMessageInterceptor interceptor : interceptors) {
+            if (!interceptor.intercept(payMessage, context, this)) {
+                return successPayOutMessage(payMessage);
+            }
+        }
+        return getPayMessageHandler().handle(payMessage, context, this);
+    }
+
+    /**
      * 创建消息
      *
      * @param message 支付平台返回的消息
@@ -450,12 +461,13 @@ public abstract class BasePayService<PC extends PayConfigStorage> implements Pay
     /**
      * 预订单回调处理器，用于订单信息的扩展
      * 签名之前使用
-     *  如果需要进行扩展请重写该方法即可
+     * 如果需要进行扩展请重写该方法即可
+     *
      * @param orderInfo 预订单信息
      * @param orderInfo 订单信息
      * @return 处理后订单信息
      */
-    public <O extends PayOrder> Map<String, Object> preOrderHandler(Map<String, Object> orderInfo, O payOrder){
+    public <O extends PayOrder> Map<String, Object> preOrderHandler(Map<String, Object> orderInfo, O payOrder) {
         return orderInfo;
     }
 

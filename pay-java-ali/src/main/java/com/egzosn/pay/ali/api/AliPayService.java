@@ -1,6 +1,7 @@
 package com.egzosn.pay.ali.api;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -19,6 +20,7 @@ import static com.egzosn.pay.ali.bean.AliPayConst.SUCCESS_CODE;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.egzosn.pay.ali.bean.AliPayBillType;
 import com.egzosn.pay.ali.bean.AliPayConst;
 import com.egzosn.pay.ali.bean.AliPayMessage;
 import com.egzosn.pay.ali.bean.AliRefundResult;
@@ -27,6 +29,7 @@ import com.egzosn.pay.ali.bean.AliTransferType;
 import com.egzosn.pay.ali.bean.CertEnvironment;
 import com.egzosn.pay.ali.bean.OrderSettle;
 import com.egzosn.pay.common.api.BasePayService;
+import com.egzosn.pay.common.bean.BillType;
 import com.egzosn.pay.common.bean.MethodType;
 import com.egzosn.pay.common.bean.Order;
 import com.egzosn.pay.common.bean.PayMessage;
@@ -123,7 +126,6 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
      * @param sign   比对的签名结果
      * @return 生成的签名结果
      */
-    @Override
     public boolean signVerify(Map<String, Object> params, String sign) {
 
         if (params instanceof JSONObject) {
@@ -161,7 +163,7 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
      * @param respMap 响应Map
      * @return 支付宝公钥证书序列号
      */
-    public String getAliPayCertSN(Map<String, Object> respMap) {
+    public String getAliPayCertSN(java.util.Map<String, Object> respMap) {
         return (String) respMap.get(AliPayConst.ALIPAY_CERT_SN_FIELD);
     }
 
@@ -171,7 +173,6 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
      * @param id 业务id, 数据的真实性.
      * @return true通过
      */
-    @Override
     public boolean verifySource(String id) {
         return true;
     }
@@ -245,7 +246,7 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
                 break;
             case WAP:
                 bizContent.put(PASSBACK_PARAMS, order.getAddition());
-                bizContent.put(PRODUCT_CODE, "QUICK_WAP_PAY");
+                bizContent.put(PRODUCT_CODE, "QUICK_WAP_WAY");
                 setReturnUrl(orderInfo, order);
                 break;
             case APP:
@@ -281,10 +282,11 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
         switch ((AliTransactionType) order.getTransactionType()) {
             case SWEEPPAY:
                 bizContent.put("qr_code_timeout_express", DateUtils.minutesRemaining(order.getExpirationTime()) + "m");
+                break;
             case PAGE:
             case WAP:
             case APP:
-                bizContent.put("time_expire", DateUtils.formatDate(order.getExpirationTime(), "yyyy-MM-dd HH:mm"));
+                bizContent.put("time_expire", DateUtils.formatDate(order.getExpirationTime(), DateUtils.YYYY_MM_DD_HH_MM_SS));
                 break;
             default:
         }
@@ -299,7 +301,7 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
      */
     private Map<String, Object> getPublicParameters(TransactionType transactionType) {
         Map<String, Object> orderInfo = new TreeMap<>();
-        orderInfo.put("app_id", payConfigStorage.getAppid());
+        orderInfo.put("app_id", payConfigStorage.getAppId());
         orderInfo.put("method", transactionType.getMethod());
         orderInfo.put("charset", payConfigStorage.getInputCharset());
         orderInfo.put("timestamp", DateUtils.format(new Date()));
@@ -526,7 +528,9 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
         parameters.put(BIZ_CONTENT, JSON.toJSONString(bizContent));
         //设置签名
         setSign(parameters);
-        final AliRefundResult refundResult = AliRefundResult.create(requestTemplate.getForObject(getReqUrl() + "?" + UriVariables.getMapToParameters(parameters), JSONObject.class));
+        JSONObject result = requestTemplate.getForObject(getReqUrl() + "?" + UriVariables.getMapToParameters(parameters), JSONObject.class);
+        JSONObject refundResponse = result.getJSONObject("alipay_trade_refund_response");
+        AliRefundResult refundResult = AliRefundResult.create(refundResponse);
         refundResult.setOutRequestNo(refundOrder.getRefundNo());
         return refundResult;
     }
@@ -559,26 +563,42 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
     /**
      * 目前只支持日账单
      *
-     * @param billDate 账单类型，商户通过接口或商户经开放平台授权后其所属服务商通过接口可以获取以下账单类型：trade、signcustomer；trade指商户基于支付宝交易收单的业务账单；signcustomer是指基于商户支付宝余额收入及支出等资金变动的帐务账单；
-     * @param billType 账单时间：日账单格式为yyyy-MM-dd，月账单格式为yyyy-MM。
+     * @param billDate 账单时间：日账单格式为yyyy-MM-dd，月账单格式为yyyy-MM。
+     * @param billType 账单类型，商户通过接口或商户经开放平台授权后其所属服务商通过接口可以获取以下账单类型：trade、signcustomer；trade指商户基于支付宝交易收单的业务账单；signcustomer是指基于商户支付宝余额收入及支出等资金变动的帐务账单；
      * @return 返回支付方下载对账单的结果
      */
+    @Deprecated
     @Override
     public Map<String, Object> downloadbill(Date billDate, String billType) {
+
+        return this.downloadBill(billDate, "trade".equals(billType) ? AliPayBillType.TRADE_DAY : AliPayBillType.SIGNCUSTOMER_DAY);
+    }
+
+    /**
+     * 下载对账单
+     *
+     * @param billDate 账单时间：日账单格式为yyyy-MM-dd，月账单格式为yyyy-MM。
+     * @param billType 账单类型，商户通过接口或商户经开放平台授权后其所属服务商通过接口可以获取以下账单类型：trade、signcustomer；trade指商户基于支付宝交易收单的业务账单；signcustomer是指基于商户支付宝余额收入及支出等资金变动的帐务账单；
+     * @return 返回支付方下载对账单的结果
+     */
+    public Map<String, Object> downloadBill(Date billDate, BillType billType) {
         //获取公共参数
         Map<String, Object> parameters = getPublicParameters(AliTransactionType.DOWNLOADBILL);
 
         Map<String, Object> bizContent = new TreeMap<>();
-        bizContent.put("bill_type", billType);
+        bizContent.put("bill_type", billType.getType());
         //目前只支持日账单
-        bizContent.put("bill_date", DateUtils.formatDay(billDate));
+        bizContent.put("bill_date", DateUtils.formatDate(billDate, billType.getDatePattern()));
         //设置请求参数的集合
-        parameters.put(BIZ_CONTENT, JSON.toJSONString(bizContent));
+        final String bizContentStr = JSON.toJSONString(bizContent);
+        parameters.put(BIZ_CONTENT, bizContentStr);
         //设置签名
         setSign(parameters);
-        return requestTemplate.getForObject(getReqUrl() + "?" + UriVariables.getMapToParameters(parameters), JSONObject.class);
-    }
+        Map<String, String> bizContentMap = new HashMap<String, String>(1);
+        parameters.put(BIZ_CONTENT, bizContentStr);
+        return requestTemplate.postForObject(getReqUrl() + "?" + UriVariables.getMapToParameters(parameters), bizContentMap, JSONObject.class);
 
+    }
 
     /**
      * @param tradeNoOrBillDate  支付平台订单号或者账单类型， 具体请
@@ -587,8 +607,6 @@ public class AliPayService extends BasePayService<AliPayConfigStorage> {
      * @param transactionType    交易类型
      * @return 返回支付方对应接口的结果
      */
-
-    @Override
     public Map<String, Object> secondaryInterface(Object tradeNoOrBillDate, String outTradeNoBillType, TransactionType transactionType) {
 
         if (transactionType == AliTransactionType.REFUND) {

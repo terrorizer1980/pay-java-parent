@@ -2,13 +2,12 @@
 
 package com.egzosn.pay.demo.entity;
 
-import com.egzosn.pay.common.bean.MsgType;
-
 //import javax.persistence.*;
 
 /**
  * 支付账户
- * @author: egan
+ *
+ * @author egan
  * email egzosn@gmail.com
  * date 2016/11/18 0:36
  */
@@ -25,7 +24,7 @@ public class ApyAccount {
     private String partner;
     // 应用id
 //    @Column(name = "appid")
-    private String appid;
+    private String appId;
     //   支付平台公钥(签名校验使用)，sign_type只有单一key时public_key与private_key相等，比如sign_type=MD5的情况
     private String publicKey;
     // 应用私钥(生成签名)
@@ -59,12 +58,9 @@ public class ApyAccount {
 //    @Enumerated(EnumType.STRING)
 //    @Column(name = "pay_type")
     private PayType payType;
-    // 消息类型，text,xml,json
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "msg_type")
-    private MsgType msgType;
     //是否为测试环境
     private boolean isTest = false;
+
     public Integer getPayId() {
         return payId;
     }
@@ -81,12 +77,12 @@ public class ApyAccount {
         this.partner = partner;
     }
 
-    public String getAppid() {
-        return appid;
+    public String getAppId() {
+        return appId;
     }
 
-    public void setAppid(String appid) {
-        this.appid = appid;
+    public void setAppId(String appId) {
+        this.appId = appId;
     }
 
     public String getPublicKey() {
@@ -145,14 +141,6 @@ public class ApyAccount {
         this.payType = payType;
     }
 
-    public MsgType getMsgType() {
-        return msgType;
-    }
-
-    public void setMsgType(MsgType msgType) {
-        this.msgType = msgType;
-    }
-
     public String getInputCharset() {
         return inputCharset;
     }
@@ -190,7 +178,7 @@ public class ApyAccount {
         return "ApyAccount{" +
                 "payId=" + payId +
                 ", partner='" + partner + '\'' +
-                ", appid='" + appid + '\'' +
+                ", appId='" + appId + '\'' +
                 ", publicKey='" + publicKey + '\'' +
                 ", privateKey='" + privateKey + '\'' +
                 ", notifyUrl='" + notifyUrl + '\'' +
@@ -199,7 +187,6 @@ public class ApyAccount {
                 ", signType='" + signType + '\'' +
                 ", inputCharset='" + inputCharset + '\'' +
                 ", payType=" + payType +
-                ", msgType=" + msgType +
                 '}';
     }
 }

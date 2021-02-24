@@ -1,20 +1,27 @@
 package com.egzosn.pay.common.api;
 
-import com.egzosn.pay.common.bean.*;
-import com.egzosn.pay.common.exception.PayErrorException;
-import com.egzosn.pay.common.http.HttpConfigStorage;
-import com.egzosn.pay.common.http.HttpRequestTemplate;
-
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map;
 
+import com.egzosn.pay.common.bean.BillType;
+import com.egzosn.pay.common.bean.MethodType;
+import com.egzosn.pay.common.bean.PayMessage;
+import com.egzosn.pay.common.bean.PayOrder;
+import com.egzosn.pay.common.bean.PayOutMessage;
+import com.egzosn.pay.common.bean.RefundOrder;
+import com.egzosn.pay.common.bean.RefundResult;
+import com.egzosn.pay.common.bean.TransactionType;
+import com.egzosn.pay.common.bean.TransferOrder;
+import com.egzosn.pay.common.http.HttpConfigStorage;
+import com.egzosn.pay.common.http.HttpRequestTemplate;
+
 /**
  * 支付服务
  *
  * @author egan
- *         <pre>
+ * <pre>
  *         email egzosn@gmail.com
  *         date 2016-5-18 14:09:01
  *         </pre>
@@ -60,53 +67,35 @@ public interface PayService<PC extends PayConfigStorage> {
      */
 
     boolean verify(Map<String, Object> params);
-    /**
-     * 签名校验
-     * 后面版本废弃
-     * @param params 参数集
-     * @param sign   签名原文
-     * @return 签名校验 true通过
-     */
-    @Deprecated
-    boolean signVerify(Map<String, Object> params, String sign);
-
-
-    /**
-     * 支付宝需要,微信是否也需要再次校验来源，进行订单查询
-     * 校验数据来源
-     *  后面版本废弃
-     * @param id 业务id, 数据的真实性.
-     * @return true通过
-     */
-    @Deprecated
-    boolean verifySource(String id);
 
 
     /**
      * 返回创建的订单信息
      *
      * @param order 支付订单
+     * @param <O>   预订单类型
      * @return 订单信息
-     * @param <O> 预订单类型
      * @see PayOrder 支付订单信息
      */
-    <O extends PayOrder>Map<String, Object> orderInfo(O order);
+    <O extends PayOrder> Map<String, Object> orderInfo(O order);
 
     /**
      * 页面转跳支付， 返回对应页面重定向信息
      *
      * @param order 订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 对应页面重定向信息
      */
-    <O extends PayOrder>String toPay(O order);
+    <O extends PayOrder> String toPay(O order);
+
     /**
      * app支付
+     *
      * @param order 订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 对应app所需参数信息
      */
-    <O extends PayOrder>Map<String, Object> app(O order);
+    <O extends PayOrder> Map<String, Object> app(O order);
 
     /**
      * 创建签名
@@ -116,7 +105,6 @@ public interface PayService<PC extends PayConfigStorage> {
      * @return 签名
      */
     String createSign(String content, String characterEncoding);
-
 
 
     /**
@@ -161,27 +149,29 @@ public interface PayService<PC extends PayConfigStorage> {
      * 获取输出二维码，用户返回给支付端,
      *
      * @param order 发起支付的订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 返回图片信息，支付时需要的
      */
-    <O extends PayOrder>BufferedImage genQrPay(O order);
+    <O extends PayOrder> BufferedImage genQrPay(O order);
+
     /**
      * 获取输出二维码信息,
      *
      * @param order 发起支付的订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 返回二维码信息,，支付时需要的
      */
-    <O extends PayOrder>String getQrPay(O order);
+    <O extends PayOrder> String getQrPay(O order);
 
     /**
      * 刷卡付,pos主动扫码付款(条码付)
      * 刷脸付
+     *
      * @param order 发起支付的订单信息
-     * @param <O> 预订单类型
+     * @param <O>   预订单类型
      * @return 返回支付结果
      */
-    <O extends PayOrder>Map<String, Object> microPay(O order);
+    <O extends PayOrder> Map<String, Object> microPay(O order);
 
     /**
      * 交易查询接口
@@ -245,7 +235,6 @@ public interface PayService<PC extends PayConfigStorage> {
     <T> T cancel(String tradeNo, String outTradeNo, Callback<T> callback);
 
 
-
     /**
      * 申请退款接口
      *
@@ -263,7 +252,6 @@ public interface PayService<PC extends PayConfigStorage> {
      * @return 返回支付方申请退款后的结果
      */
     <T> T refund(RefundOrder refundOrder, Callback<T> callback);
-
 
 
     /**
@@ -288,10 +276,20 @@ public interface PayService<PC extends PayConfigStorage> {
      * 下载对账单
      *
      * @param billDate 账单时间：日账单格式为yyyy-MM-dd，月账单格式为yyyy-MM。
-     * @param billType 账单类型，商户通过接口或商户经开放平台授权后其所属服务商通过接口可以获取以下账单类型：trade、signcustomer；trade指商户基于支付宝交易收单的业务账单；signcustomer是指基于商户支付宝余额收入及支出等资金变动的帐务账单；
+     * @param billType 账单类型
      * @return 返回支付方下载对账单的结果
      */
+    @Deprecated
     Map<String, Object> downloadbill(Date billDate, String billType);
+
+    /**
+     * 下载对账单
+     *
+     * @param billDate 账单时间：日账单格式为yyyy-MM-dd，月账单格式为yyyy-MM。
+     * @param billType 账单类型
+     * @return 返回支付方下载对账单的结果
+     */
+    Map<String, Object> downloadBill(Date billDate, BillType billType);
 
     /**
      * 下载对账单
@@ -303,32 +301,6 @@ public interface PayService<PC extends PayConfigStorage> {
      * @return 返回支付方下载对账单的结果
      */
     <T> T downloadbill(Date billDate, String billType, Callback<T> callback);
-
-
-    /**
-     * 通用查询接口
-     *   接下来移除此方法
-     * @param tradeNoOrBillDate  支付平台订单号或者账单类型， 具体请
-     *                           类型为{@link String }或者 {@link Date }，类型须强制限制，类型不对应则抛出异常{@link PayErrorException}
-     * @param outTradeNoBillType 商户单号或者 账单类型
-     * @param transactionType    交易类型
-     * @return 返回支付方对应接口的结果
-     */
-    @Deprecated
-    Map<String, Object> secondaryInterface(Object tradeNoOrBillDate, String outTradeNoBillType, TransactionType transactionType);
-
-    /**
-     * 通用查询接口
-     * 接下来移除此方法
-     * @param tradeNoOrBillDate  支付平台订单号或者账单日期， 具体请 类型为{@link String }或者 {@link Date }，类型须强制限制，类型不对应则抛出异常{@link PayErrorException}
-     * @param outTradeNoBillType 商户单号或者 账单类型
-     * @param transactionType    交易类型
-     * @param callback           处理器
-     * @param <T>                返回类型
-     * @return 返回支付方对应接口的结果
-     */
-    @Deprecated
-    <T> T secondaryInterface(Object tradeNoOrBillDate, String outTradeNoBillType, TransactionType transactionType, Callback<T> callback);
 
 
     /**
@@ -380,6 +352,14 @@ public interface PayService<PC extends PayConfigStorage> {
     PayOutMessage payBack(Map<String, String[]> parameterMap, InputStream is);
 
     /**
+     * 使用转换过的参数进行回调处理
+     *
+     * @param data 转化后的参数Map
+     * @return 获得回调响应信息
+     */
+    PayOutMessage payBack(Map<String, Object> data);
+
+    /**
      * 设置支付消息处理器,这里用于处理具体的支付业务
      *
      * @param handler 消息处理器
@@ -409,6 +389,7 @@ public interface PayService<PC extends PayConfigStorage> {
 
     /**
      * 创建消息
+     *
      * @param message 支付平台返回的消息
      * @return 支付消息对象
      */
@@ -417,12 +398,13 @@ public interface PayService<PC extends PayConfigStorage> {
     /**
      * 预订单回调处理器，用于订单信息的扩展
      * 签名之前使用
-     *  如果需要进行扩展请重写该方法即可
+     * 如果需要进行扩展请重写该方法即可
+     *
      * @param orderInfo 商户平台预订单信息
-     * @param payOrder 订单信息
-     * @param <O> 预订单类型
+     * @param payOrder  订单信息
+     * @param <O>       预订单类型
      * @return 处理后订单信息
      */
-    <O extends PayOrder>Map<String, Object> preOrderHandler(Map<String, Object> orderInfo, O payOrder);
+    <O extends PayOrder> Map<String, Object> preOrderHandler(Map<String, Object> orderInfo, O payOrder);
 
 }

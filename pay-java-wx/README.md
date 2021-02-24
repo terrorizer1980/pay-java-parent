@@ -8,7 +8,7 @@
 
               WxPayConfigStorage wxPayConfigStorage = new WxPayConfigStorage();
               wxPayConfigStorage.setMchId("合作者id（商户号）");
-              wxPayConfigStorage.setAppid("应用id");
+              wxPayConfigStorage.setAppId("应用id");
               wxPayConfigStorage.setKeyPublic("转账公钥，转账时必填");
               wxPayConfigStorage.setSecretKey("密钥");
               wxPayConfigStorage.setNotifyUrl("异步回调地址");
@@ -109,6 +109,21 @@
               //获取APP支付所需的信息组，直接给app端就可使用
           Map appOrderInfo = service.orderInfo(payOrder);
         /*-----------/APP-------------------*/
+
+``` 
+
+
+#### JSAPI支付
+
+```java
+
+        /*-----------JSAPI-------------------*/
+        //公众号支付
+        payOrder.setTransactionType(WxTransactionType.JSAPI);
+        //微信公众号对应微信付款用户的唯一标识
+        payOrder.setOpenid(openid);
+          Map appOrderInfo = service.orderInfo(payOrder);
+        /*-----------/JSAPI-------------------*/
 
 ``` 
 

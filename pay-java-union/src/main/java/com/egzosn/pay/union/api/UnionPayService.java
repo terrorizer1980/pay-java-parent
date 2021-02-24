@@ -1,8 +1,38 @@
 package com.egzosn.pay.union.api;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 import com.alibaba.fastjson.JSONObject;
 import com.egzosn.pay.common.api.BasePayService;
-import com.egzosn.pay.common.bean.*;
+import com.egzosn.pay.common.bean.BillType;
+import com.egzosn.pay.common.bean.MethodType;
+import com.egzosn.pay.common.bean.PayMessage;
+import com.egzosn.pay.common.bean.PayOrder;
+import com.egzosn.pay.common.bean.PayOutMessage;
+import com.egzosn.pay.common.bean.RefundOrder;
+import com.egzosn.pay.common.bean.TransactionType;
 import com.egzosn.pay.common.bean.outbuilder.PayTextOutMessage;
 import com.egzosn.pay.common.bean.result.PayException;
 import com.egzosn.pay.common.exception.PayErrorException;
@@ -16,22 +46,10 @@ import com.egzosn.pay.common.util.sign.encrypt.RSA;
 import com.egzosn.pay.common.util.sign.encrypt.RSA2;
 import com.egzosn.pay.common.util.str.StringUtils;
 import com.egzosn.pay.union.bean.SDKConstants;
+import com.egzosn.pay.union.bean.UnionPayBillType;
 import com.egzosn.pay.union.bean.UnionPayMessage;
 import com.egzosn.pay.union.bean.UnionRefundResult;
 import com.egzosn.pay.union.bean.UnionTransactionType;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.*;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * @author Actinia
@@ -95,7 +113,8 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
             certDescriptor.initPrivateSignCert(payConfigStorage.getKeyPrivateCertInputStream(), payConfigStorage.getKeyPrivateCertPwd(), "PKCS12");
             certDescriptor.initPublicCert(payConfigStorage.getAcpMiddleCertInputStream());
             certDescriptor.initRootCert(payConfigStorage.getAcpRootCertInputStream());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOG.error(e);
         }
 
@@ -192,7 +211,6 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
      * @param sign   签名原文
      * @return 签名校验 true通过
      */
-    @Override
     public boolean signVerify(Map<String, Object> params, String sign) {
         SignUtils signUtils = SignUtils.valueOf(payConfigStorage.getSignType());
 
@@ -214,17 +232,6 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
         }
     }
 
-    /**
-     * 支付宝需要,微信是否也需要再次校验来源，进行订单查询
-     * 校验数据来源
-     *
-     * @param id 业务id, 数据的真实性.
-     * @return true通过
-     */
-    @Override
-    public boolean verifySource(String id) {
-        return false;
-    }
 
     /**
      * 订单超时时间。
@@ -371,11 +378,14 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
             /*PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)*/
             builder.build(pkixParams);
             return cert;
-        } catch (java.security.cert.CertPathBuilderException e) {
+        }
+        catch (java.security.cert.CertPathBuilderException e) {
             LOG.error("verify certificate chain fail.", e);
-        } catch (CertificateExpiredException e) {
+        }
+        catch (CertificateExpiredException e) {
             LOG.error(e);
-        } catch (GeneralSecurityException e) {
+        }
+        catch (GeneralSecurityException e) {
             LOG.error(e);
         }
         return null;
@@ -403,7 +413,8 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
 
         if (null == order.getTransactionType()) {
             order.setTransactionType(UnionTransactionType.WEB);
-        } else if (UnionTransactionType.WEB != order.getTransactionType() && UnionTransactionType.WAP != order.getTransactionType() && UnionTransactionType.B2B != order.getTransactionType()) {
+        }
+        else if (UnionTransactionType.WEB != order.getTransactionType() && UnionTransactionType.WAP != order.getTransactionType() && UnionTransactionType.B2B != order.getTransactionType()) {
             throw new PayErrorException(new PayException("-1", "错误的交易类型:" + order.getTransactionType()));
         }
 
@@ -456,7 +467,8 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             InputStream tIn = new ByteArrayInputStream(x509CertString.getBytes("ISO-8859-1"));
             x509Cert = (X509Certificate) cf.generateCertificate(tIn);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new PayErrorException(new PayException("证书加载失败", "gen certificate error:" + e.getLocalizedMessage()));
         }
         return x509Cert;
@@ -580,7 +592,7 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
      * @param type         UnionTransactionType.REFUND  或者UnionTransactionType.CONSUME_UNDO
      * @return 返回支付方申请退款后的结果
      */
-    public Map<String, Object> unionRefundOrConsumeUndo(String origQryId, String orderId, BigDecimal refundAmount, UnionTransactionType type) {
+    public UnionRefundResult unionRefundOrConsumeUndo(String origQryId, String orderId, BigDecimal refundAmount, UnionTransactionType type) {
         return unionRefundOrConsumeUndo(new RefundOrder(orderId, origQryId, refundAmount), type);
 
     }
@@ -648,16 +660,30 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
      * 下载对账单
      *
      * @param billDate 账单时间
+     * @param fileType 文件类型 文件类型，一般商户填写00即可
+     * @return 返回fileContent 请自行将数据落地
+     */
+    @Deprecated
+    @Override
+    public Map<String, Object> downloadbill(Date billDate, String fileType) {
+      return downloadBill(billDate, new UnionPayBillType(fileType));
+    }
+
+    /**
+     * 下载对账单
+     *
+     * @param billDate 账单时间
      * @param billType 账单类型
      * @return 返回fileContent 请自行将数据落地
      */
     @Override
-    public Map<String, Object> downloadbill(Date billDate, String billType) {
+    public Map<String, Object> downloadBill(Date billDate, BillType billType) {
+
         Map<String, Object> params = this.getCommonParam();
         UnionTransactionType.FILE_TRANSFER.convertMap(params);
 
         params.put(SDKConstants.param_settleDate, DateUtils.formatDate(billDate, DateUtils.MMDD));
-        params.put(SDKConstants.param_fileType, billType);
+        params.put(SDKConstants.param_fileType, billType.getFileType());
         params.remove(SDKConstants.param_backUrl);
         params.remove(SDKConstants.param_currencyCode);
         this.setSign(params);
@@ -672,19 +698,6 @@ public class UnionPayService extends BasePayService<UnionPayConfigStorage> {
 
         }
         throw new PayErrorException(new PayException("failure", "验证签名失败", response.toString()));
-    }
-
-
-    /**
-     * @param tradeNoOrBillDate  支付平台订单号或者账单类型， 具体请
-     *                           类型为{@link String }或者 {@link Date }，类型须强制限制，类型不对应则抛出异常{@link PayErrorException}
-     * @param outTradeNoBillType 商户单号或者 账单类型
-     * @param transactionType    交易类型
-     * @return 返回支付方对应接口的结果
-     */
-    @Override
-    public Map<String, Object> secondaryInterface(Object tradeNoOrBillDate, String outTradeNoBillType, TransactionType transactionType) {
-        return Collections.emptyMap();
     }
 
 
